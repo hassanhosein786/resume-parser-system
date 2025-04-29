@@ -18,6 +18,8 @@ nltk.data.path.append(nltk_data_path)
 
 # Preprocess the text
 def preprocess(text):
+    if not isinstance(text, str):
+        return ""
     text = text.lower()
     text = re.sub(r"http\S+|www\S+|https\S+", '', text)
     text = re.sub(r'\@w+|\#','', text)
