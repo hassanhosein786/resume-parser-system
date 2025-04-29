@@ -12,8 +12,9 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 
-# Tell NLTK to look in local nltk_data folder
-nltk.data.path.append(os.path.join(os.getcwd(), 'nltk_data'))
+# Manually set the path to find nltk_data
+nltk_data_path = os.path.join(os.path.dirname(__file__), 'nltk_data')
+nltk.data.path.append(nltk_data_path)
 
 # Preprocess the text
 def preprocess(text):
