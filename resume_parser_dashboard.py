@@ -4,12 +4,16 @@ import streamlit as st
 import pandas as pd
 import nltk
 import re
+import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
+
+# Tell NLTK to look in local nltk_data folder
+nltk.data.path.append(os.path.join(os.getcwd(), 'nltk_data'))
 
 nltk.download('punkt')
 nltk.download('stopwords')
