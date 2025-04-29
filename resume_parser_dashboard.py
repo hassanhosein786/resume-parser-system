@@ -15,10 +15,6 @@ import matplotlib.pyplot as plt
 # Tell NLTK to look in local nltk_data folder
 nltk.data.path.append(os.path.join(os.getcwd(), 'nltk_data'))
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-
 # Preprocess the text
 def preprocess(text):
     text = text.lower()
