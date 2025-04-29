@@ -1,5 +1,3 @@
-# Save this as resume_parser_dashboard.py
-
 import streamlit as st
 import pandas as pd
 import nltk
@@ -12,9 +10,10 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 
-# Manually set the path to find nltk_data
-nltk_data_path = os.path.join(os.path.dirname(__file__), 'nltk_data')
-nltk.data.path.append(nltk_data_path)
+# Download necessary NLTK resources
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
 
 # Preprocess the text
 def preprocess(text):
@@ -40,7 +39,7 @@ def load_and_process_data(file):
     vectorizer = TfidfVectorizer(max_features=1000)
     X = vectorizer.fit_transform(data["Cleaned_Resume"])
 
-    kmeans = KMeans(n_clusters=10, random_state=42)
+    kmeans = KMeans(n_clusters=10, random_state=42, n_init=10)  # Added n_init to prevent warnings
     data['Cluster'] = kmeans.fit_predict(X)
 
     return data, vectorizer
