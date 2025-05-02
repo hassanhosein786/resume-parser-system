@@ -14,19 +14,20 @@ import matplotlib.pyplot as plt
 nltk_data_path = os.path.join(os.path.dirname(__file__), 'nltk_data')
 nltk.data.path.append(nltk_data_path)
 
-# Preprocessing function
+# Preprocessing function — keeps hyphens, pluses, and key tech terms
 def preprocess(text):
     if not isinstance(text, str) or not text.strip():
         return ""
+    
     text = text.lower()
     text = re.sub(r"http\S+|www\S+|https\S+", '', text)
-    text = re.sub(r'\@w+|\#', '', text)
-    text = re.sub(r'[^A-Za-z\s]', '', text)
+    text = re.sub(r"[^a-zA-Z0-9\s\-\+]", '', text)  # Keep letters, digits, hyphen, plus
+    text = re.sub(r"\s+", ' ', text)
 
     try:
         tokens = nltk.word_tokenize(text)
         stop_words = set(stopwords.words('english'))
-        tokens = [word for word in tokens if word not in stop_words and len(word) > 2]
+        tokens = [word for word in tokens if word not in stop_words and len(word) > 1]
         lemmatizer = WordNetLemmatizer()
         tokens = [lemmatizer.lemmatize(w) for w in tokens]
         return " ".join(tokens)
@@ -47,11 +48,11 @@ def load_and_process_data(file):
         data["Category"] = data["Category"].astype(str).str.strip().str.lower()
         data["Cleaned_Resume"] = data["Resume"].apply(preprocess)
 
-        # Filter out rows with empty cleaned resumes
+        # Filter out empty cleaned resumes
         data = data[data["Cleaned_Resume"].str.strip().astype(bool)]
 
         if data.empty:
-            st.error("All resumes became empty after cleaning. Please upload better content.")
+            st.error("All resumes became empty after preprocessing. Please upload richer content.")
             return None, None
 
         vectorizer = TfidfVectorizer(max_features=1000)
@@ -131,6 +132,6 @@ if uploaded_file is not None:
                     mime="text/csv",
                 )
     else:
-        st.error("Failed to process the uploaded file. Please check its structure.")
+        st.error("❌ Could not process the file. Please check formatting or resume content.")
 else:
-    st.info("Please upload a resume dataset CSV to begin.")
+    st.info("📂 Please upload a resume dataset CSV to begin.")
