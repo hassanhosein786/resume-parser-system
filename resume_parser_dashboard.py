@@ -10,11 +10,11 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 
-# Set up NLTK data path
+# Set up NLTK path
 nltk_data_path = os.path.join(os.path.dirname(__file__), 'nltk_data')
 nltk.data.path.append(nltk_data_path)
 
-# Preprocess text
+# Preprocessing function
 def preprocess(text):
     if not isinstance(text, str) or not text.strip():
         return ""
@@ -22,7 +22,7 @@ def preprocess(text):
     text = re.sub(r"http\S+|www\S+|https\S+", '', text)
     text = re.sub(r'\@w+|\#', '', text)
     text = re.sub(r'[^A-Za-z\s]', '', text)
-    
+
     try:
         tokens = nltk.word_tokenize(text)
         stop_words = set(stopwords.words('english'))
@@ -37,6 +37,7 @@ def preprocess(text):
 def load_and_process_data(file):
     try:
         data = pd.read_csv(file)
+
         if "Resume" not in data.columns or "Category" not in data.columns:
             st.error("Uploaded CSV must contain both 'Resume' and 'Category' columns.")
             return None, None
@@ -44,26 +45,24 @@ def load_and_process_data(file):
         data.dropna(subset=["Resume", "Category"], inplace=True)
         data["Resume"] = data["Resume"].astype(str)
         data["Category"] = data["Category"].astype(str).str.strip().str.lower()
-
         data["Cleaned_Resume"] = data["Resume"].apply(preprocess)
 
-# Drop rows with empty Cleaned_Resume
-data = data[data["Cleaned_Resume"].str.strip().astype(bool)]
+        # Filter out rows with empty cleaned resumes
+        data = data[data["Cleaned_Resume"].str.strip().astype(bool)]
 
-if data.empty:
-    st.error("All resumes were empty after preprocessing. Check your file.")
-    return None, None
+        if data.empty:
+            st.error("All resumes became empty after cleaning. Please upload better content.")
+            return None, None
 
-vectorizer = TfidfVectorizer(max_features=1000)
-X = vectorizer.fit_transform(data["Cleaned_Resume"])
-
+        vectorizer = TfidfVectorizer(max_features=1000)
+        X = vectorizer.fit_transform(data["Cleaned_Resume"])
 
         kmeans = KMeans(n_clusters=10, random_state=42, n_init=10)
         data['Cluster'] = kmeans.fit_predict(X)
 
         return data, vectorizer
     except Exception as e:
-        st.error(f"Error loading or processing data: {e}")
+        st.error(f"Error processing the file: {e}")
         return None, None
 
 def score_resume(resume, job_title, vectorizer):
@@ -78,7 +77,7 @@ def score_resume(resume, job_title, vectorizer):
     except Exception:
         return 0.0
 
-# Streamlit Frontend
+# Streamlit UI
 st.set_page_config(page_title="Resume Parser Dashboard", layout="wide")
 st.title("📄 Resume Parser System")
 st.write("Analyze and score resumes automatically using NLP and Machine Learning.")
@@ -92,16 +91,18 @@ if uploaded_file is not None:
         st.subheader("📋 Dataset Overview")
         st.dataframe(data[["Category", "Resume"]].head())
 
-        st.write("🔍 Cleaned Resume Preview:")
+        st.write("🔍 Cleaned Resume Preview")
         st.dataframe(data[["Category", "Cleaned_Resume"]].head())
 
         if st.button("⚙️ Score Resumes"):
-            data["Score"] = data.apply(lambda x: score_resume(x["Cleaned_Resume"], x["Category"], vectorizer), axis=1)
+            data["Score"] = data.apply(
+                lambda x: score_resume(x["Cleaned_Resume"], x["Category"], vectorizer), axis=1
+            )
 
             if data["Score"].isnull().all() or (data["Score"] == 0.0).all():
-                st.warning("⚠️ No meaningful scores were calculated. Please check your resume and category content.")
+                st.warning("⚠️ No meaningful scores were generated. Please check your input data.")
             else:
-                st.success("Scoring completed!")
+                st.success("✅ Scoring completed!")
 
                 st.subheader("🎯 Scored Resumes")
                 st.dataframe(data[["Category", "Score"]].sort_values(by="Score", ascending=False))
@@ -109,27 +110,27 @@ if uploaded_file is not None:
                 st.subheader("📊 Score Distribution")
                 fig, ax = plt.subplots()
                 ax.hist(data["Score"], bins=10, color="skyblue", edgecolor="black")
-                ax.set_xlabel('Score')
-                ax.set_ylabel('Number of Resumes')
-                ax.set_title('Resume Score Distribution')
+                ax.set_xlabel("Score")
+                ax.set_ylabel("Number of Resumes")
+                ax.set_title("Resume Score Distribution")
                 st.pyplot(fig)
 
                 st.subheader("📈 Average Score by Category")
-                avg_score = data.groupby('Category')["Score"].mean().sort_values(ascending=False)
+                avg_score = data.groupby("Category")["Score"].mean().sort_values(ascending=False)
                 fig2, ax2 = plt.subplots()
-                avg_score.plot(kind='bar', color='teal', ax=ax2)
-                ax2.set_ylabel('Average Score')
-                ax2.set_title('Average Resume Score per Category')
+                avg_score.plot(kind="bar", color="teal", ax=ax2)
+                ax2.set_ylabel("Average Score")
+                ax2.set_title("Average Resume Score per Category")
                 st.pyplot(fig2)
 
-                csv = data.to_csv(index=False).encode('utf-8')
+                csv = data.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     label="💾 Download Scored CSV",
                     data=csv,
-                    file_name='scored_resumes.csv',
-                    mime='text/csv',
+                    file_name="scored_resumes.csv",
+                    mime="text/csv",
                 )
     else:
-        st.error("Could not process the uploaded file. Please check the content format and try again.")
+        st.error("Failed to process the uploaded file. Please check its structure.")
 else:
-    st.info('Please upload a resume dataset file to begin.')
+    st.info("Please upload a resume dataset CSV to begin.")
