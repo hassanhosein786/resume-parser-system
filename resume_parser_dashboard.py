@@ -47,8 +47,16 @@ def load_and_process_data(file):
 
         data["Cleaned_Resume"] = data["Resume"].apply(preprocess)
 
-        vectorizer = TfidfVectorizer(max_features=1000)
-        X = vectorizer.fit_transform(data["Cleaned_Resume"])
+# Drop rows with empty Cleaned_Resume
+data = data[data["Cleaned_Resume"].str.strip().astype(bool)]
+
+if data.empty:
+    st.error("All resumes were empty after preprocessing. Check your file.")
+    return None, None
+
+vectorizer = TfidfVectorizer(max_features=1000)
+X = vectorizer.fit_transform(data["Cleaned_Resume"])
+
 
         kmeans = KMeans(n_clusters=10, random_state=42, n_init=10)
         data['Cluster'] = kmeans.fit_predict(X)
